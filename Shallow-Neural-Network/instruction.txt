@@ -1,0 +1,4 @@
+data_set.py--------------------用于训练的数据
+activation_function.py---------包含激活函数的定义和其导数
+Shallow_ANN_model.py-----------只有一层隐藏层的网络
+ANN_3Layers_model.py-----------有两个隐藏层的网络

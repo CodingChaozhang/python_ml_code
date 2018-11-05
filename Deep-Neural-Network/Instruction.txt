@@ -1,0 +1,4 @@
+activation_function.py-------包含激活函数和激活函数导数的定义
+Deep_ANN_model.py------------多层神经网络的主程序
+Keras_ANN_model.py-----------对应的keras多层神经网络程序
+data_set.py------------------用来测试网络的分类数据集

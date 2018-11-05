@@ -1,0 +1,13 @@
+说明：
+采用不同的梯度下降方法：
+1. 梯度下降法
+2. 随机梯度下降法
+3. Mini-Batch 梯度下降法
+4. Momentum方法
+5. RMSPop方法
+6. Adam方法
+
+ANN_3Layers_model.py---------------------主程序
+diff_optimizer_test.py-------------------不同梯度下降算法测试
+Stochastic_Gradient_Descent_test.py------随机梯度下降法测试
+activation_function.py-------------------激活函数子程序
