@@ -11,3 +11,4 @@ ANN_3Layers_model.py---------------------主程序
 diff_optimizer_test.py-------------------不同梯度下降算法测试
 Stochastic_Gradient_Descent_test.py------随机梯度下降法测试
 activation_function.py-------------------激活函数子程序
+tf_ANN_test.py---------------------------对应算法的tensorflow实现

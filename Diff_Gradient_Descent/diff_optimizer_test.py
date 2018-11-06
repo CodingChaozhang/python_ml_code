@@ -18,7 +18,7 @@ plt.show()
 ## mini_batch梯度下降
 #parameters = ANN.model_mini_batch(train_X, train_Y, layers_dims, mini_batch_size=100, num_iterations=20000,initialize='small')
 # momentum梯度下降
-parameters = ANN.model_opt(train_X, train_Y, layers_dims, optimizer='adam', initialize='random',learning_rate=0.003, mini_batch_size=128, num_epochs=10000, epsilon=1e-5)
+parameters = ANN.model_opt(train_X, train_Y, layers_dims, optimizer='gd', initialize='random',learning_rate=0.003, mini_batch_size=128, num_epochs=10000, epsilon=1e-5)
 print('训练集：')
 prediction_train = ANN.prediction(train_X, train_Y, parameters)
 print('测试集：')
