@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 """
 简介：
-基于tensorflow的多层神经网络softmax分类(二分类)
+基于tensorflow的多层神经网络softmax分类(二分类)----------------有问题
 
-Created on Mon Nov  5 18:59:14 2018
+Created on Tue Nov  6 19:52:21 2018
 
 @author: GEAR
 """
@@ -83,11 +83,15 @@ def compute_cost(Z3, Y):
     Returns:
         cost - 损失值
     '''
+    # 方法一： tf.reduce_mean 求平均值
+    A3 = tf.sigmoid(Z3)
+    cost = - tf.reduce_mean(Y * tf.log(A3) + (1-Y) * tf.log(1-A3))
     
-    logits = tf.transpose(Z3)   #计算Z3的转置--------------------------------??
-    labels = tf.transpose(Y)
-    
-    cost = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=logits, labels=labels))
+    # 方法二：采用自带函数
+#    logits = tf.transpose(Z3)   #计算Z3的转置--------------------------------??
+#    labels = tf.transpose(Y)
+#    
+#    cost = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(logits=logits, labels=labels))
     
     return cost
 
@@ -145,7 +149,7 @@ def model(train_X, train_Y, test_X, test_Y, layers_dims, learning_rate=0.003, nu
             if epoch % 5 ==0:
                costs.append(epoch_cost)
                if print_cost and epoch % 100 ==0:
-                   print('epoch= ' + str(epoch) + '     epoch_cost= ' + str(epoch_cost))
+                   print('epoch= ' + str(epoch) + '\t  epoch_cost= %.3f' % (epoch_cost))
         if figure:
             plt.plot(np.squeeze(costs))
             plt.ylabel('cost')
@@ -156,20 +160,27 @@ def model(train_X, train_Y, test_X, test_Y, layers_dims, learning_rate=0.003, nu
         
         # 保存训练后的参数
         parameters = sess.run(parameters)
-        
+        A3 = tf.sigmoid(Z3)
+        Y_pre = tf.round(A3)
         # 计算当前的预测结果
-        correct_prediction = tf.equal(tf.argmax(Z3), tf.argmax(Y))
+        correct_prediction = tf.equal(Y, Y_pre)
         
         # 计算正确率 tf.cast--数据类型转换函数
         accuracy = tf.reduce_mean(tf.cast(correct_prediction, 'float'))
         
-        print('训练集的准确率：', accuracy.eval({X:train_X, Y:train_Y})) # --------???
-        print('测试集的准确率：', accuracy.eval({X:test_X, Y:test_Y}))
+        print('训练集的准确率：%.3f' % (accuracy.eval({X:train_X, Y:train_Y}))) # --------???
+        print('测试集的准确率：%.3f' % (accuracy.eval({X:test_X, Y:test_Y})))
         
         return parameters
 
 
 def predict(X, parameters):
+    '''
+    Parameters:
+        X - 输入预测数据，维数（数据维数， 1）
+    Returns:
+        prediction - 预测结果
+    '''
     
     W1 = tf.convert_to_tensor(parameters["W1"])
     b1 = tf.convert_to_tensor(parameters["b1"])
@@ -185,13 +196,16 @@ def predict(X, parameters):
               "W3": W3,
               "b3": b3}
     
-    x = tf.placeholder("float", [12288, 1])
+    x = tf.placeholder("float", [X.shape[0], 1])
     
-    z3 = forward_propagation_for_predict(x, params)
-    p = tf.argmax(z3)
+    z3 = forward_propagation(x, params)
+    a3 = tf.sigmoid(z3)
+    y_pre = tf.round(a3)
     
     sess = tf.Session()
-    prediction = sess.run(p, feed_dict = {x: X})
+    prediction = sess.run(y_pre, feed_dict = {x: X})
+    prediction = int(np.squeeze(prediction))
+    print('预测类别为：%d' % (prediction))
         
     return prediction
     
@@ -199,12 +213,13 @@ def predict(X, parameters):
 
 # 载入数据
 train_X, train_Y, test_X, test_Y = init_utils.load_dataset(is_plot=True)
-train_Y = tf_utils.convert_to_one_hot(train_Y, 2)
-test_Y = tf_utils.convert_to_one_hot(test_Y, 2)
-layers_dims = [train_X.shape[0], 10, 5, 2]  #使用softmax时输出有2个对二分类
+#train_Y = tf_utils.convert_to_one_hot(train_Y, 2)
+#test_Y = tf_utils.convert_to_one_hot(test_Y, 2)
+layers_dims = [train_X.shape[0], 10, 5, 1]  #使用sigmoid时输出有2个对二分类
 plt.show()
 
 
 #开始训练
-parameters = model(train_X, train_Y, test_X, test_Y, layers_dims, learning_rate=0.01)
+parameters = model(train_X, train_Y, test_X, test_Y, layers_dims, learning_rate=0.001)
+
 

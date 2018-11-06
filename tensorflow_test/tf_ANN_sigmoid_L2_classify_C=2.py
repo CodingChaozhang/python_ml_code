@@ -1,9 +1,12 @@
 # -*- coding: utf-8 -*-
 """
 简介：
-基于tensorflow的多层神经网络softmax分类(二分类)
+基于tensorflow的多层神经网络softmax分类(二分类)----------------加入L2正则化和dropout
+在使用tf.get_variable()和tf.variable_scope()的时候,你会发现,它们俩中有regularizer形参.
+如果传入这个参数的话,那么variable_scope内的weights的正则化损失,或者weights的正则化损失
+就会被添加到GraphKeys.REGULARIZATION_LOSSES中. 
 
-Created on Mon Nov  5 18:59:14 2018
+Created on Tue Nov  6 21:26:04 2018
 
 @author: GEAR
 """
@@ -43,14 +46,15 @@ def initialize_parameters(layers_dims):
     parameters = {}
     L = len(layers_dims)    #网络总层数
     tf.set_random_seed(1) # 指定随机种子
+    L2 = tf.contrib.layers.l2_regularizer(scale=0.01)
     for i in range(1, L):
         parameters['W'+str(i)] = tf.get_variable('W'+str(i), shape=[layers_dims[i], layers_dims[i-1]], 
-                                   initializer=tf.contrib.layers.xavier_initializer(seed=1))
+                                   initializer=tf.contrib.layers.xavier_initializer(seed=1), regularizer=L2)
         parameters['b'+str(i)] = tf.get_variable('b'+str(i), shape=[layers_dims[i], 1], initializer=tf.zeros_initializer())
        
     return parameters
 
-def forward_propagation(X, parameters):
+def forward_propagation(X, parameters, keep_prob):
     '''
     实现一个模型的向前传播，三个隐藏层
     Parameters:
@@ -69,25 +73,32 @@ def forward_propagation(X, parameters):
     
     Z1 = tf.add(tf.matmul(W1, X), b1)
     A1 = tf.nn.relu(Z1)
+    A1 = tf.nn.dropout(A1, keep_prob)
     Z2 = tf.add(tf.matmul(W2, A1), b2)
     A2 = tf.nn.relu(Z2)
+    A2 = tf.nn.dropout(A2, keep_prob)
     Z3 = tf.add(tf.matmul(W3, A2), b3)
     
     return Z3
 
 def compute_cost(Z3, Y):
     '''
-    计算损失函数
+    计算损失函数, 加入L2正则化
     Parameters:
         Z3 - 最后一层的线性输出矩阵[2, Zone]
     Returns:
         cost - 损失值
     '''
+    L2 = 0.1 * sum(tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES))
+    # 方法一： tf.reduce_mean 求平均值
+    A3 = tf.sigmoid(Z3)
+    cost = - tf.reduce_mean(Y * tf.log(A3) + (1-Y) * tf.log(1-A3)) + L2
     
-    logits = tf.transpose(Z3)   #计算Z3的转置--------------------------------??
-    labels = tf.transpose(Y)
-    
-    cost = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=logits, labels=labels))
+    # 方法二：采用自带函数
+#    logits = tf.transpose(Z3)   #计算Z3的转置--------------------------------??
+#    labels = tf.transpose(Y)
+#    
+#    cost = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(logits=logits, labels=labels))
     
     return cost
 
@@ -112,7 +123,8 @@ def model(train_X, train_Y, test_X, test_Y, layers_dims, learning_rate=0.003, nu
     parameters = initialize_parameters(layers_dims)
     
     # step3 向前传播
-    Z3 = forward_propagation(X, parameters)
+    keep_prob = tf.placeholder(tf.float32)  #加入dropout
+    Z3 = forward_propagation(X, parameters, keep_prob)
     
     # step4 计算损失函数
     cost = compute_cost(Z3, Y)
@@ -138,14 +150,14 @@ def model(train_X, train_Y, test_X, test_Y, layers_dims, learning_rate=0.003, nu
                 (minibatch_X, minibatch_Y) = minibatch
                 
                 # 开始运行session
-                _, minibatch_cost = sess.run([optimizer, cost], feed_dict={X:minibatch_X, Y:minibatch_Y})
+                _, minibatch_cost = sess.run([optimizer, cost], feed_dict={X:minibatch_X, Y:minibatch_Y, keep_prob:1})
                 # 计算这个minibatch在这一代中所占的误差
                 epoch_cost = epoch_cost +minibatch_cost / num_minibatchs
                 
             if epoch % 5 ==0:
                costs.append(epoch_cost)
                if print_cost and epoch % 100 ==0:
-                   print('epoch= ' + str(epoch) + '     epoch_cost= ' + str(epoch_cost))
+                   print('epoch= ' + str(epoch) + '\t  epoch_cost= %.3f' % (epoch_cost))
         if figure:
             plt.plot(np.squeeze(costs))
             plt.ylabel('cost')
@@ -156,20 +168,27 @@ def model(train_X, train_Y, test_X, test_Y, layers_dims, learning_rate=0.003, nu
         
         # 保存训练后的参数
         parameters = sess.run(parameters)
-        
+        A3 = tf.sigmoid(Z3)
+        Y_pre = tf.round(A3)
         # 计算当前的预测结果
-        correct_prediction = tf.equal(tf.argmax(Z3), tf.argmax(Y))
+        correct_prediction = tf.equal(Y, Y_pre)
         
         # 计算正确率 tf.cast--数据类型转换函数
         accuracy = tf.reduce_mean(tf.cast(correct_prediction, 'float'))
         
-        print('训练集的准确率：', accuracy.eval({X:train_X, Y:train_Y})) # --------???
-        print('测试集的准确率：', accuracy.eval({X:test_X, Y:test_Y}))
+        print('训练集的准确率：%.3f' % (accuracy.eval({X:train_X, Y:train_Y, keep_prob:1}))) # --------???
+        print('测试集的准确率：%.3f' % (accuracy.eval({X:test_X, Y:test_Y, keep_prob:1})))
         
         return parameters
 
 
 def predict(X, parameters):
+    '''
+    Parameters:
+        X - 输入预测数据，维数（数据维数， 1）
+    Returns:
+        prediction - 预测结果
+    '''
     
     W1 = tf.convert_to_tensor(parameters["W1"])
     b1 = tf.convert_to_tensor(parameters["b1"])
@@ -185,13 +204,16 @@ def predict(X, parameters):
               "W3": W3,
               "b3": b3}
     
-    x = tf.placeholder("float", [12288, 1])
+    x = tf.placeholder("float", [X.shape[0], 1])
     
-    z3 = forward_propagation_for_predict(x, params)
-    p = tf.argmax(z3)
+    z3 = forward_propagation(x, params)
+    a3 = tf.sigmoid(z3)
+    y_pre = tf.round(a3)
     
     sess = tf.Session()
-    prediction = sess.run(p, feed_dict = {x: X})
+    prediction = sess.run(y_pre, feed_dict = {x: X})
+    prediction = int(np.squeeze(prediction))
+    print('预测类别为：%d' % (prediction))
         
     return prediction
     
@@ -199,12 +221,13 @@ def predict(X, parameters):
 
 # 载入数据
 train_X, train_Y, test_X, test_Y = init_utils.load_dataset(is_plot=True)
-train_Y = tf_utils.convert_to_one_hot(train_Y, 2)
-test_Y = tf_utils.convert_to_one_hot(test_Y, 2)
-layers_dims = [train_X.shape[0], 10, 5, 2]  #使用softmax时输出有2个对二分类
+#train_Y = tf_utils.convert_to_one_hot(train_Y, 2)
+#test_Y = tf_utils.convert_to_one_hot(test_Y, 2)
+layers_dims = [train_X.shape[0], 10, 5, 1]  #使用sigmoid时输出有2个对二分类
 plt.show()
 
 
 #开始训练
 parameters = model(train_X, train_Y, test_X, test_Y, layers_dims, learning_rate=0.01)
+
 

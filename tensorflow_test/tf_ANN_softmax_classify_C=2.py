@@ -206,5 +206,6 @@ plt.show()
 
 
 #开始训练
-parameters = model(train_X, train_Y, test_X, test_Y, layers_dims, learning_rate=0.01)
+parameters = model(train_X, train_Y, test_X, test_Y, layers_dims, learning_rate=0.001)
+
 
