@@ -1,10 +1,15 @@
 # -*- coding: utf-8 -*-
 """
+Created on Wed Nov  7 09:28:11 2018
+
+@author: GEAR
+"""
+
+# -*- coding: utf-8 -*-
+"""
 简介：
 基于tensorflow的多层神经网络softmax分类(二分类)----------------加入L2正则化和dropout
-在使用tf.get_variable()和tf.variable_scope()的时候,你会发现,它们俩中有regularizer形参.
-如果传入这个参数的话,那么variable_scope内的weights的正则化损失,或者weights的正则化损失
-就会被添加到GraphKeys.REGULARIZATION_LOSSES中. 
+采用tf.add_to_collection方式添加L2正则化
 
 Created on Tue Nov  6 21:26:04 2018
 
@@ -42,14 +47,15 @@ def initialize_parameters(layers_dims):
     Returns:
         parameters - 包含W和b的字典
     '''
-    
+    lambd = 0.001
     parameters = {}
     L = len(layers_dims)    #网络总层数
     tf.set_random_seed(1) # 指定随机种子
     L2 = tf.contrib.layers.l2_regularizer(scale=0.001)
     for i in range(1, L):
         parameters['W'+str(i)] = tf.get_variable('W'+str(i), shape=[layers_dims[i], layers_dims[i-1]], 
-                                   initializer=tf.contrib.layers.xavier_initializer(seed=1), regularizer=L2)
+                                   initializer=tf.contrib.layers.xavier_initializer(seed=1))
+        tf.add_to_collection('loss', tf.contrib.layers.l2_regularizer(scale=lambd)(parameters['W'+str(i)]))
         parameters['b'+str(i)] = tf.get_variable('b'+str(i), shape=[layers_dims[i], 1], initializer=tf.zeros_initializer())
        
     return parameters
@@ -73,10 +79,10 @@ def forward_propagation(X, parameters, keep_prob):
     
     Z1 = tf.add(tf.matmul(W1, X), b1)
     A1 = tf.nn.relu(Z1)
-    A1 = tf.nn.dropout(A1, keep_prob)   #加入droput
+    A1 = tf.nn.dropout(A1, keep_prob)
     Z2 = tf.add(tf.matmul(W2, A1), b2)
     A2 = tf.nn.relu(Z2)
-    A2 = tf.nn.dropout(A2, keep_prob)   #加入dropout
+    A2 = tf.nn.dropout(A2, keep_prob)
     Z3 = tf.add(tf.matmul(W3, A2), b3)
     
     return Z3
@@ -89,18 +95,18 @@ def compute_cost(Z3, Y):
     Returns:
         cost - 损失值
     '''
-    L2 = tf.reduce_sum(tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES))
     # 方法一： tf.reduce_mean 求平均值
     A3 = tf.sigmoid(Z3)
-    cost = - tf.reduce_mean(Y * tf.log(A3) + (1-Y) * tf.log(1-A3)) + L2
-    
+    cost = - tf.reduce_mean(Y * tf.log(A3) + (1-Y) * tf.log(1-A3))
+    tf.add_to_collection('loss', cost)      # tf.get_collection返回一个列表
+    loss = tf.add_n(tf.get_collection('loss'))  # tg.add_n把输入元素相加
     # 方法二：采用自带函数
 #    logits = tf.transpose(Z3)   #计算Z3的转置--------------------------------??
 #    labels = tf.transpose(Y)
 #    
 #    cost = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(logits=logits, labels=labels))
     
-    return cost
+    return loss
 
 def model(train_X, train_Y, test_X, test_Y, layers_dims, learning_rate=0.003, num_epochs=1500,
           minibatch_size=128, print_cost=True, figure=True):
@@ -223,7 +229,7 @@ def predict(X, parameters):
 train_X, train_Y, test_X, test_Y = init_utils.load_dataset(is_plot=True)
 #train_Y = tf_utils.convert_to_one_hot(train_Y, 2)
 #test_Y = tf_utils.convert_to_one_hot(test_Y, 2)
-layers_dims = [train_X.shape[0], 10, 5, 1]  #使用sigmoid时输出有2个对二分类
+layers_dims = [train_X.shape[0], 8, 5, 1]  #使用sigmoid时输出有2个对二分类
 plt.show()
 
 
