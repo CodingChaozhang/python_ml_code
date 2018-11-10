@@ -93,7 +93,58 @@ def conv_forward(A_pre, W, b, hparameters):
     
     return (Z, cache)
 
+def pool_forward(A_pre, hparameters, mode='max'):
+    '''
+    实现池化层的向前传播
+    Parameters:
+        A_pre - 输入数据，shape=(m, n_h_pre, n_w_pre, n_c_pre)
+        hparameters - 包含超参数f和stride的字典
+        mode - pooling模式选择（max,average）
+    Returns:
+        A - 池化层的输出，shape=(m, n_h, n_w, n_c)
+        cache - 存储了反向传播需要用到的值，包含了参数和超参数
+    '''
+    # step1 获取输入数据的维度
+    (m, n_h_pre, n_w_pre, n_c_pre) = A_pre.shape
+    # step2 获取超参数
+    f = hparameters['f']
+    stride = hparameters['stride']
+    # step3 计算输出维度
+    n_h = np.floor((n_h - f) / stride) + 1
+    n_w = np.floor((n_w - f) / stride) + 1
+    n_c = n_c_pre
+    
+    # step4 初速化输出矩阵
+    A = np.zeros((m, n_h, n_w, n_c)
+    # step5 进行池化操作
+    for i in range(m):
+        for h in range(n_h):
+            for w in range(n_w):
+                for c in range(n_c):
+                   vert_start = h * stride
+                   vert_end = vert_start + f
+                   horiz_start = w * stride
+                   horiz_end = horiz_start + f
+                   
+                   a_slice_pre = A_pre[vert_start:vert_end, horiz_start:horiz_end, c]
+                   
+                   if mode ='max':
+                       A[i, h, w, c] = np.max(a_slice_pre)
+                    elif mode = 'average':
+                        A[i, h, w, c] = np.mean(a_slice_pre)
+    # 检查数据格式
+    assert(A.shape = (m, n_h, n_w, n_c))
+    
+    # 存储临时变量
+    cache = (A_pre, hparameters) 
+    return A, cache
 
+
+
+                    
+                    
+                    
+                    
                     
 if __name__ == '__main__':
     np.random.seed(1)    
