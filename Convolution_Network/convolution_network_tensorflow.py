@@ -5,7 +5,7 @@ Created on Sat Nov 10 16:54:12 2018
 
 @author: gear
 """
-import tf_utils
+import cnn_utils
 import tensorflow as tf
 from tensorflow.python.framework import ops
 import matplotlib.pyplot as plt
@@ -91,7 +91,7 @@ def compute_cost(Z3, Y):
     
     return cost
     
-def model(train_X, train_Y, test_X, test_Y, learning_rate=0.009, num_epochs=100, 
+def model(train_X, train_Y, test_X, test_Y, learning_rate=0.09, num_epochs=100, 
           minibatch_size=64, print_cost=True):
     '''
     实现一个有两个卷积层的CNN网络
@@ -133,7 +133,7 @@ def model(train_X, train_Y, test_X, test_Y, learning_rate=0.009, num_epochs=100,
             minibatch_cost = 0
             num_minibatches = int(m / minibatch_size)
             seed = seed + 1
-            minibatches = tf_utils.random_mini_batches(train_X, train_Y, minibatch_size, seed)
+            minibatches = cnn_utils.random_mini_batches(train_X, train_Y, minibatch_size, seed)
             
             for minibatch in minibatches:
                 # 选取一个minibatch
@@ -170,13 +170,13 @@ def model(train_X, train_Y, test_X, test_Y, learning_rate=0.009, num_epochs=100,
 
     
 if __name__ == '__main__':
-    train_X, train_Y, test_X, test_Y, classes = tf_utils.load_dataset()
+    train_X, train_Y, test_X, test_Y, classes = cnn_utils.load_dataset()
     # 归一化数据集
     train_X = train_X / 255
     test_X = test_X / 255
     # 将标签转换为one-hot编码
-    train_Y = tf_utils.convert_to_one_hot(train_Y, 6).T
-    test_Y = tf_utils.convert_to_one_hot(test_Y, 6).T
+    train_Y = cnn_utils.convert_to_one_hot(train_Y, 6).T
+    test_Y = cnn_utils.convert_to_one_hot(test_Y, 6).T
     
     _, _, parameters = model(train_X, train_Y, test_X, test_Y, num_epochs=150)
     
