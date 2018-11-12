@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Note:
-    实现卷积网络（CNN）中的关键算法
+    实现卷积网络（CNN）中的关键算法(test)
 
 Created on Fri Nov  9 15:54:10 2018
 
