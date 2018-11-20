@@ -35,7 +35,7 @@ def triplet_loss(y_true, y_pred, alpha=0.2):
                 anchor - 给定的anchor图像的编码，shape=(None, 128)
                 positive - positive图像的编码， shape=(None, 128)
                 negative - negative图像的编码， shape=(None, 128)
-        alpha - 超参数
+         alpha - 超参数
     Returns:
         loss - 实数， 损失函数的值
     '''
