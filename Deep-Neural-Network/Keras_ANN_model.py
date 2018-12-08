@@ -37,6 +37,7 @@ score = model.evaluate(test_X, test_Y)
 
 # step6 进行预测
 Y_prediction = model.predict_classes(test_X)
+
 print('Test loss:', score[0])
 print('Test accuracy:', score[1])
 

@@ -187,7 +187,7 @@ def predict(X, parameters):
     
     x = tf.placeholder("float", [12288, 1])
     
-    z3 = forward_propagation_for_predict(x, params)
+    z3 = tf_utils.forward_propagation_for_predict(x, params)
     p = tf.argmax(z3)
     
     sess = tf.Session()

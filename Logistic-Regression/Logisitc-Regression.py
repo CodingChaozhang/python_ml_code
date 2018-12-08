@@ -156,7 +156,7 @@ def trainModel(X_train, Y_train, num_iterations=5000, learning_rate=0.005, SGD=T
       
 if __name__ == '__main__':
     #数据集地址
-    root = 'D:/machine learing/python-ml-code/Logistic-Regression/data/testSet.txt'
+    root = 'data/testSet.txt'
     X_train, Y_train = loadData(root)
     W, b, Y_prediction, accuracy = trainModel(X_train, Y_train, num_iterations=5000, learning_rate=0.05, SGD=True, print_loss=True)
     
