@@ -159,7 +159,7 @@ def model(train_X, train_Y, test_X, test_Y, learning_rate=0.09, num_epochs=100,
         correct_prediction = tf.equal(predict_op, tf.argmax(Y, 1))
         
         # 计算在train_Set 和 test_Set上的准确率
-        accuracy = tf.reduce_mean(correct_prediction, tf.float32)
+        accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
         print(accuracy)
         train_accuracy = accuracy.eval({X:train_X, Y:train_Y})
         test_accuracy = accuracy.eval({X:train_X, Y:train_Y})
@@ -178,6 +178,6 @@ if __name__ == '__main__':
     train_Y = cnn_utils.convert_to_one_hot(train_Y, 6).T
     test_Y = cnn_utils.convert_to_one_hot(test_Y, 6).T
     
-    _, _, parameters = model(train_X, train_Y, test_X, test_Y, num_epochs=150)
+    _, _, parameters = model(train_X, train_Y, test_X, test_Y, num_epochs=100)
     
     

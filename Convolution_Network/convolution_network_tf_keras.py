@@ -1,11 +1,13 @@
 # -*- coding: utf-8 -*-
 """
-
-简介：采用tensorflow建立多层卷积网络识别mnist
-Created on Sat Dec  8 20:47:16 2018
+简介：
+利用tensorflow和keras混合编码
+Created on Sun Dec  9 15:44:56 2018
 
 @author: dell
 """
+
+import keras
 import numpy as np
 import tensorflow as tf
 import matplotlib.pyplot as plt
@@ -14,12 +16,13 @@ from keras.utils import np_utils
 
 import time
 
+
 def load_data():
     
     (train_X, train_Y), (test_X, test_Y) = mnist.load_data()
-    
     train_X = train_X.reshape((-1, 28, 28, 1))
     test_X = test_X.reshape((-1, 28, 28, 1))
+    
     train_Y = np_utils.to_categorical(train_Y, 10)
     test_Y = np_utils.to_categorical(test_Y, 10)
     
@@ -43,82 +46,27 @@ def create_placeholders(n_h, n_w, n_c, n_y):
     
     return X, Y
 
-def conv_relu(inputs, filters, k_size, stride, padding, scope_name):
+def CNN(inputs, keep_prob, n_classes):
     '''
-    建立激活函数是relu的卷积层函数
     Parameters:
-        inputs -- 输入卷积层的数据
+        shape -- 输入的数据维度
     Returns:
-        激活函数的值
+        model -- 创建的ANN模型
     '''
-    with tf.variable_scope(scope_name, reuse=tf.AUTO_REUSE) as scope:
-        in_channels = inputs.shape[-1]  # 输入图像的通道数
-        kernel = tf.get_variable(name='kernel', 
-                                 shape=[k_size, k_size, in_channels, filters], 
-                                 initializer=tf.truncated_normal_initializer())
-        
-        biases = tf.get_variable(name='biases', 
-                                 shape=[filters],
-                                 initializer=tf.random_normal_initializer())
-        
-        conv = tf.nn.conv2d(inputs, kernel, strides=[1, stride, stride, 1], padding=padding)
-        return tf.nn.relu(conv + biases, name=scope.name)
     
-
-def maxpooling(inputs, k_size, stride, padding='VALID', scope_name='pool'):
-    '''
-    建立maxpooling层的函数
-    '''
-    with tf.variable_scope(scope_name, reuse=tf.AUTO_REUSE) as scope:
-        pool = tf.nn.max_pool(inputs,
-                              ksize=[1, k_size, k_size, 1],
-                              strides=[1, stride, stride, 1],
-                              padding=padding)
-        return pool
+    # 对X使用CONV -> BN -> RELU
+    conv1 = keras.layers.Conv2D(filters=32, kernel_size=(5,5), strides=(1,1), name='conv1')(inputs)
+    conv1 = keras.layers.BatchNormalization(axis=3, name='bn0')(conv1)   # 这里默认axis=1
+    conv1 = keras.layers.Activation('relu')(conv1)
     
-def fully_connected(inputs, out_dim, scope_name='fc'):
-    '''
-    建立全连接层函数
-    '''
-    with tf.variable_scope(scope_name, reuse=tf.AUTO_REUSE) as scope:
-        in_dim = inputs.shape[-1]
-        w = tf.get_variable(name='weights',
-                            shape=[in_dim, out_dim], 
-                            initializer=tf.truncated_normal_initializer())
-        b =tf.get_variable(name='biases', 
-                           shape=[out_dim], 
-                           initializer=tf.constant_initializer(0.0))
-        
-        out = tf.matmul(inputs, w) + b
-        
-    return out
-
-def ConNet(inputs, keep_prob, n_classes):
-    '''
-    建立网络
-    '''
-    keep_prob = tf.constant(keep_prob)       # 这里直接输入0.75会出错
-    conv1 = conv_relu(inputs= inputs,
-                      filters=32,
-                      k_size=5,
-                      stride=1,
-                      padding='SAME',
-                      scope_name='conv1')
+    # 加入池化层1
+    pool1 = keras.layers.MaxPooling2D(pool_size=(2,2), name='max_pool')(conv1)
     
-    pool1 = maxpooling(inputs=conv1,
-                       k_size=2,
-                       stride=2,
-                       padding='VALID',
-                       scope_name='pool1')
-    
-    pool1 = tf.layers.flatten(pool1)
-    
-#    fc = fully_connected(inputs=pool1,
-#                         out_dim=1024,
-#                         scope_name='fc')
-    fc = tf.layers.dense(pool1, 1024, activation=tf.nn.relu, name='fc')
-
-    logits = fully_connected(fc, n_classes, 'logits')
+    #降维加入全连接层
+    pool1 = keras.layers.Flatten()(pool1)
+    fc = keras.layers.Activation('relu')(pool1)
+    logits = keras.layers.Dense(units=n_classes, activation=None, name='logits')(fc)
+    logits = keras.layers.Dropout(keep_prob)(logits)
     
     return logits
 
@@ -171,7 +119,7 @@ def ConvNetmodel(train_X, train_Y, test_X, test_Y, learning_rate=0.001, num_epoc
     X, Y = create_placeholders(n_H, n_W, n_C, n_y)
     
     # step2 向前传播
-    logits = ConNet(inputs=X, keep_prob=0.75, n_classes=n_y)
+    logits = CNN(inputs=X, keep_prob=0.75, n_classes=n_y)
     
     # step3 计算损失函数
     loss = compute_loss(logits, Y)
