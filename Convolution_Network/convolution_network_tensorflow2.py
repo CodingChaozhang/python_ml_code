@@ -68,7 +68,7 @@ def conv_relu(inputs, filters, k_size, stride, padding, scope_name):
 def maxpooling(inputs, k_size, stride, padding='VALID', scope_name='pool'):
     '''
     建立maxpooling层的函数
-    '''
+    
     with tf.variable_scope(scope_name, reuse=tf.AUTO_REUSE) as scope:
         pool = tf.nn.max_pool(inputs,
                               ksize=[1, k_size, k_size, 1],

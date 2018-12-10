@@ -57,8 +57,6 @@ def CNN(input_shape):
     return model
 
 
-def loss()
-
 def TrainCNN(model, train_X, train_Y, test_X, test_Y):
     '''
     训练刚才建立的ANN模型
