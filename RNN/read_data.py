@@ -5,29 +5,153 @@ Created on Mon Dec 10 15:04:06 2018
 @author: dell
 """
 
-# 获取名称
-data = open("dinos.txt", "r").read()
+import dataset_utils
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
 
-# 转化为小写字符
-data = data.lower()
-
-# 转化为无序且不重复的元素列表
-chars = list(set(data))
-
-# 获取大小信息
-data_size, vocab_size = len(data), len(chars)
-
-print(chars)
-print("共计有%d个字符，唯一字符有%d个"%(data_size,vocab_size))
-
-char_to_ix = {ch:i for i, ch in enumerate(sorted(chars))}
-ix_to_char = {i:ch for i, ch in enumerate(sorted(chars))}
-
-with open("dinos.txt") as f:
-        examples = f.readlines()
-examples = [x.lower().strip() for x in examples]
+import keras
+from sklearn.preprocessing import MinMaxScaler
+from sklearn.preprocessing import StandardScaler
+from sklearn.metrics import mean_squared_error
+from keras.optimizers import Adam
+from keras.optimizers import RMSprop
 
 
-index = 1 % len(examples)
-X = [None] + [char_to_ix[ch] for ch in examples[index]] 
-Y = X[1:] + [char_to_ix["\n"]]
+fish_data = 'data/fish_data.csv'
+fish_data = pd.read_csv(fish_data, index_col=0)
+dataset = fish_data.values
+
+dataset = dataset[0:200]
+dataset = dataset[:, 0:49]
+
+dataset_X = dataset[:, 0:-1]
+#dataset_X = dataset_X / dataset_X.max()
+#dataset_X = np.abs(dataset_X)
+
+dataset_Y = dataset[:, -1].reshape(-1, 1)
+s = dataset_Y.max()
+dataset_Y = dataset_Y / s
+
+scaler1 = StandardScaler()
+scaler2 = StandardScaler()
+scaler3 = StandardScaler()
+
+scaler4 = MinMaxScaler()
+
+#dataset_X = scaler4.fit_transform(dataset_X)
+
+Ux = dataset[:, 0:-1:3]
+Uy = dataset[:, 1:-1:3]
+W = dataset[:, 2:-1:3]
+
+Ux = scaler1.fit_transform(Ux)
+Uy = scaler2.fit_transform(Uy)
+W = scaler3.fit_transform(W)
+
+temp = np.column_stack((Ux, Uy))
+dataset_X = np.column_stack((temp, W))
+
+
+dataset1 = np.column_stack((dataset_X, dataset_Y))
+
+
+train_X, train_Y = dataset_utils.generator_muti(dataset1, lookback=4, delay=0, min_index=0, max_index=150, step=1, batch_size=100)
+test_X, test_Y = dataset_utils.generator_muti(dataset1, lookback=4, delay=0, min_index=150, max_index=None, step=1, batch_size=100)
+
+
+
+def RNN_Model(input_shape):
+    '''
+    2D流场时间序列预测网络结构
+    Parameters:
+        input_shape -- 输入数据类型
+    Returns:
+        model -- 用于预测的模型
+    '''
+    Input = keras.layers.Input(shape=input_shape)
+    X = keras.layers.LSTM(units=128)(Input)
+    X = keras.layers.Conv1D(filters=32, kernel_size=3, activation='relu')(Input)
+    X = keras.layers.MaxPool1D(pool_size=2)(X)
+    
+    X = keras.layers.Conv1D(filters=64, kernel_size=1, activation='relu')(X)  
+    X = keras.layers.Conv1D(filters=16, kernel_size=1, activation='relu')(X)
+    X = keras.layers.Conv1D(filters=8, kernel_size=1, activation='relu')(X)
+    X = keras.layers.Conv1D(filters=4, kernel_size=1, activation='relu')(X)
+    X = keras.layers.LSTM(units=128, return_sequences=True)(X)
+    X = keras.layers.LSTM(units=128)(X)
+    
+#    X = keras.layers.Bidirectional(keras.layers.LSTM(units=128))(X)
+    Output = keras.layers.Dense(units=1)(X)
+    
+    model = keras.models.Model(inputs=Input, outputs=Output)
+    
+    return model
+
+def Train_Model(model, train_X, train_Y, test_X, test_Y):
+    '''
+    对模型进行训练
+    Parameters:
+        model -- 建立的模型
+        train_X -- 训练数据
+        train_Y -- 训练标签
+    Returns:
+        model -- 训练好的模型
+    '''
+    
+    model.compile(optimizer=RMSprop(lr=0.01), loss='mae')
+    history = model.fit(train_X, train_Y, epochs=500, batch_size=100, validation_data=(test_X, test_Y),
+              verbose=2, shuffle=False)
+    
+    # plot history
+    plt.plot(history.history['loss'], label='train')
+    plt.plot(history.history['val_loss'], label='test')
+    plt.legend()
+    plt.show()
+    
+    return model
+
+def Prediction(model, test_X, test_Y):
+    '''
+    对测试数据进行预测
+    Parameters:
+        model -- 训练好的模型
+        test_X -- 测试数据
+        test_Y --测试标签
+    Returns:
+        None
+    '''
+    
+    pred_Y = model.predict(test_X)
+    
+    # invert data to before:
+#    y_true = scaler_Y.inverse_transform(test_Y)
+#    y_pred = scaler_Y.inverse_transform(pred_Y)
+    
+    y_true = test_Y * s
+    y_pred = pred_Y * s
+    plt.plot(y_true)
+    plt.plot(y_pred)
+    plt.legend(['y_true', 'y_pred'])
+    plt.show()
+    # calcualte RMSE
+    rmse = np.sqrt(mean_squared_error(y_true, y_pred))
+    print('Test RMSE: %.3f' % rmse)
+    
+    return y_true, y_pred
+
+
+
+##############################---Main_Code---#################################
+
+input_shape = train_X.shape[1:]    
+
+# step1 建立模型
+model = RNN_Model(input_shape)
+model.summary()
+
+# step2 进行训练
+model = Train_Model(model, train_X, train_Y, test_X, test_Y)
+
+# step3 进行预测
+y_true, y_pred = Prediction(model, test_X, test_Y)
