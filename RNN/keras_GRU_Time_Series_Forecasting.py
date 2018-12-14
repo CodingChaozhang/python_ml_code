@@ -49,15 +49,35 @@ def RNN_Model(input_shape):
         model -- 用于预测的模型
     '''
     Input = keras.layers.Input(shape=input_shape)
-    X = keras.layers.Conv1D(filters=32, kernel_size=4, activation='relu')(Input)
-    X = keras.layers.GRU(units=64, dropout=0.1, recurrent_dropout=0.5, return_sequences=True)(X)
-    X = keras.layers.GRU(units=128, activation='relu', dropout=0.1, recurrent_dropout=0.5)(X)
-#    X = keras.layers.GRU(units=128)(Input)
+#    X = keras.layers.Conv1D(filters=32, kernel_size=4, activation='relu')(Input)
+#    X = keras.layers.GRU(units=64, dropout=0.1, recurrent_dropout=0.5, return_sequences=True)(X)
+    X = keras.layers.GRU(units=128, return_sequences=True)(Input)
+    X = keras.layers.GRU(units=128)(X)
     Output = keras.layers.Dense(units=1)(X)
     
     model = keras.models.Model(inputs=Input, outputs=Output)
     
     return model
+
+def CNN_model(input_shape):
+    '''
+    卷积序列预测网络结构
+    Parameters:
+        input_shape -- 输入数据类型
+    Returns:
+        model -- 用于预测的模型
+    '''
+    Input = keras.layers.Input(shape=input_shape)
+#    X = keras.layers.Conv1D(filters=32, kernel_size=4, activation='relu')(Input)
+#    X = keras.layers.GRU(units=64, dropout=0.1, recurrent_dropout=0.5, return_sequences=True)(X)
+    X = keras.layers.GRU(units=128, return_sequences=True)(Input)
+    X = keras.layers.GRU(units=128)(X)
+    Output = keras.layers.Dense(units=1)(X)
+    
+    model = keras.models.Model(inputs=Input, outputs=Output)
+    
+    return model
+    
 
 def Train_Model(model, train_X, train_Y, test_X, test_Y):
     '''
@@ -70,7 +90,7 @@ def Train_Model(model, train_X, train_Y, test_X, test_Y):
         model -- 训练好的模型
     '''
     
-    model.compile(optimizer=Adam(lr=0.01), loss='mae')
+    model.compile(optimizer=Adam(lr=0.001), loss='mae')
     history = model.fit(train_X, train_Y, epochs=500, batch_size=100, validation_data=(test_X, test_Y),
               verbose=2, shuffle=False)
     
@@ -118,12 +138,12 @@ input_shape = train_X.shape[1:]
 
 # step1 建立模型
 model = RNN_Model(input_shape)
-
-# step2 进行训练
-model = Train_Model(model, train_X, train_Y, test_X, test_Y)
-
-# step3 进行预测
-y_true, y_pred = Prediction(model, test_X, test_Y)
+#
+## step2 进行训练
+#model = Train_Model(model, train_X, train_Y, test_X, test_Y)
+#
+## step3 进行预测
+#y_true, y_pred = Prediction(model, test_X, test_Y)
 
 
 

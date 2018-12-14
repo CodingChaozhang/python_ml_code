@@ -56,6 +56,7 @@ dataset_X = np.column_stack((temp, W))
 dataset1 = np.column_stack((dataset_X, dataset_Y))
 
 
+
 train_X, train_Y = dataset_utils.generator_muti(dataset1, lookback=4, delay=0, min_index=0, max_index=150, step=1, batch_size=100)
 test_X, test_Y = dataset_utils.generator_muti(dataset1, lookback=4, delay=0, min_index=150, max_index=None, step=1, batch_size=100)
 
@@ -70,23 +71,66 @@ def RNN_Model(input_shape):
         model -- 用于预测的模型
     '''
     Input = keras.layers.Input(shape=input_shape)
-    X = keras.layers.LSTM(units=128)(Input)
-    X = keras.layers.Conv1D(filters=32, kernel_size=3, activation='relu')(Input)
-    X = keras.layers.MaxPool1D(pool_size=2)(X)
-    
-    X = keras.layers.Conv1D(filters=64, kernel_size=1, activation='relu')(X)  
-    X = keras.layers.Conv1D(filters=16, kernel_size=1, activation='relu')(X)
-    X = keras.layers.Conv1D(filters=8, kernel_size=1, activation='relu')(X)
-    X = keras.layers.Conv1D(filters=4, kernel_size=1, activation='relu')(X)
-    X = keras.layers.LSTM(units=128, return_sequences=True)(X)
-    X = keras.layers.LSTM(units=128)(X)
-    
+    X = keras.layers.LSTM(units=128, return_sequences=True)(Input)
+#    X = keras.layers.Conv1D(filters=32, kernel_size=3, activation='relu')(Input)
+#    X = keras.layers.MaxPool1D(pool_size=2)(X)
+#    
+#    X = keras.layers.Conv1D(filters=64, kernel_size=1, activation='relu')(X)  
+#    X = keras.layers.Conv1D(filters=16, kernel_size=1, activation='relu')(X)
+#    X = keras.layers.Conv1D(filters=8, kernel_size=1, activation='relu')(X)
+#    X = keras.layers.Conv1D(filters=4, kernel_size=1, activation='relu')(X)
+#    X = keras.layers.LSTM(units=128, return_sequences=True)(X)
+#    X = keras.layers.LSTM(units=128, return_sequences=True)(X)
+    X = keras.layers.LSTM(units=256)(X)
+#    X = keras.layers.Dense(units=128, activation='relu')(X)
+#    X = keras.layers.Dense(units=128, activation='relu')(X)
+#    X = keras.layers.Dense(units=128, activation='relu')(X)
 #    X = keras.layers.Bidirectional(keras.layers.LSTM(units=128))(X)
-    Output = keras.layers.Dense(units=1)(X)
+    Output = keras.layers.Dense(units=1, activation='relu')(X)
     
     model = keras.models.Model(inputs=Input, outputs=Output)
     
     return model
+
+def ANN_model(input_shape):
+    Input = keras.layers.Input(shape=input_shape)
+    # 第01层网络
+    X = keras.layers.Dense(units=192, activation='relu')(Input)
+    X = keras.layers.Dropout(rate=1)(X)
+    
+    # 第02层网络
+    X = keras.layers.Dense(units=192, activation='relu')(X)
+    X = keras.layers.Dropout(rate=1)(X) 
+    
+    # 第03层网络
+    X = keras.layers.Dense(units=256, activation='relu')(X)
+    X = keras.layers.Dropout(rate=1)(X)
+    
+    # 第04层网络
+    X = keras.layers.Dense(units=256, activation='relu')(X)
+    X = keras.layers.Dropout(rate=1)(X)
+    
+    # 第05层网络
+    X = keras.layers.Dense(units=192, activation='relu')(X)
+    X = keras.layers.Dropout(rate=1)(X)
+    
+    # 第06层网络
+    X = keras.layers.Dense(units=48, activation='relu')(X)
+    X = keras.layers.Dropout(rate=1)(X)
+    
+    # 第07层网络
+    X = keras.layers.Dense(units=48, activation='relu')(X)
+    X = keras.layers.Dropout(rate=1)(X)
+    
+    Sx = keras.layers.Dense(units=1, name='Sx')(X)  #x方向距离
+    
+    model = keras.models.Model(inputs=Input, outputs=Sx)
+    
+    return model
+    
+    
+    
+    
 
 def Train_Model(model, train_X, train_Y, test_X, test_Y):
     '''
@@ -99,8 +143,8 @@ def Train_Model(model, train_X, train_Y, test_X, test_Y):
         model -- 训练好的模型
     '''
     
-    model.compile(optimizer=RMSprop(lr=0.01), loss='mae')
-    history = model.fit(train_X, train_Y, epochs=500, batch_size=100, validation_data=(test_X, test_Y),
+    model.compile(optimizer=RMSprop(lr=0.001), loss='mae')
+    history = model.fit(train_X, train_Y, epochs=500, batch_size=50, validation_data=(test_X, test_Y),
               verbose=2, shuffle=False)
     
     # plot history
@@ -143,13 +187,16 @@ def Prediction(model, test_X, test_Y):
 
 
 ##############################---Main_Code---#################################
+    
+train_X = train_X.reshape(-1, 192)
+test_X = test_X.reshape(-1, 192)
 
 input_shape = train_X.shape[1:]    
 
 # step1 建立模型
-model = RNN_Model(input_shape)
+model = ANN_model(input_shape)
 model.summary()
-
+#
 # step2 进行训练
 model = Train_Model(model, train_X, train_Y, test_X, test_Y)
 
