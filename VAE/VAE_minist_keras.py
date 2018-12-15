@@ -12,6 +12,9 @@ from keras import layers
 from keras import backend as K
 from keras.models import Model
 import numpy as np
+from keras.datasets import mnist
+from scipy.stats import norm
+import matplotlib.pyplot as plt
 
 img_shape =(28, 28, 1)
 batch_size = 16
@@ -21,7 +24,7 @@ latent_dim =2           # 潜在空间的维度(2维)
 input_img = layers.Input(shape=img_shape)
 
 X = layers.Conv2D(filters=32, kernel_size=3, padding='same', activation='relu')(input_img)
-X = layers.Conv2D(filters=64, kernel_size=3, padding='same', activation='relu')(X)
+X = layers.Conv2D(filters=64, kernel_size=3, padding='same', activation='relu', strides=(2, 2))(X)
 X = layers.Conv2D(filters=64, kernel_size=3, padding='same', activation='relu')(X)
 X = layers.Conv2D(filters=64, kernel_size=3, padding='same', activation='relu')(X)
 
@@ -38,9 +41,10 @@ z_log_var = layers.Dense(units=latent_dim)(X)
 def sampling(args):
     '''潜在空间的采样函数'''
     z_mean, z_log_var = args
-    epsilon = K.random_normal(shape=(K.shape(z_mean)[0], latent_dim))    #shape=(?, 2)
+    epsilon = K.random_normal(shape=(K.shape(z_mean)[0], latent_dim), 
+                              mean=0, stddev=1.0)    #shape=(?, 2)
     
-    return z_mean + K.exp(z_log_var) + epsilon
+    return z_mean + K.exp(z_log_var) * epsilon
 
 z = layers.Lambda(sampling)([z_mean, z_log_var])     #shape=(?, 2)
 
@@ -64,7 +68,7 @@ z_decoded = decoder(z)
 
 # 定义用于计算VAE的损失函数
 class CustomVariationalLayer(keras.layers.Layer):
-    
+
     def vae_loss(self, x, z_decoded):
         x = K.flatten(x)
         z_decoded = K.flatten(z_decoded)
@@ -85,9 +89,49 @@ class CustomVariationalLayer(keras.layers.Layer):
 # 对输入和解码后的输出调用自定义层，得到最终的模型输出
 y = CustomVariationalLayer()([input_img, z_decoded])
 
-##################################Training-model###############################
-        
 
- 
+##################################Training-model###############################
+
+# 载入训练数据
+(train_X, _), (test_X, test_Y) = mnist.load_data()
+
+train_X = train_X.astype('float32') / 255
+train_X = train_X.reshape(train_X.shape + (1,))
+test_X = test_X.astype('float32') / 255
+test_X = test_X.reshape(test_X.shape + (1,))
+
+
+# 训练模型
+VAE = Model(inputs=input_img, outputs=y)
+VAE.summary()
+VAE.compile(optimizer='adam', loss=None)
+VAE.fit(x=train_X, y=None, shuffle=True, epochs=10, batch_size=batch_size, validation_data=(test_X, None))
+
+VAE.save('VAE.h5')
+
+###############################Sampling########################################
+# Display a 2D manifold of the digits
+n = 15  # figure with 15x15 digits
+digit_size = 28
+figure = np.zeros((digit_size * n, digit_size * n))
+# Linearly spaced coordinates on the unit square were transformed
+# through the inverse CDF (ppf) of the Gaussian
+# to produce values of the latent variables z,
+# since the prior of the latent space is Gaussian
+grid_x = norm.ppf(np.linspace(0.05, 0.95, n))
+grid_y = norm.ppf(np.linspace(0.05, 0.95, n))
+
+for i, yi in enumerate(grid_x):
+    for j, xi in enumerate(grid_y):
+        z_sample = np.array([[xi, yi]])
+        z_sample = np.tile(z_sample, batch_size).reshape(batch_size, 2)
+        x_decoded = decoder.predict(z_sample, batch_size=batch_size)
+        digit = x_decoded[0].reshape(digit_size, digit_size)
+        figure[i * digit_size: (i + 1) * digit_size,
+               j * digit_size: (j + 1) * digit_size] = digit
+
+plt.figure(figsize=(10, 10))
+plt.imshow(figure, cmap='Greys_r')
+plt.show()
 
     
