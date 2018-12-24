@@ -16,7 +16,7 @@ from tensorflow.python.framework import ops
 ################parameters################
 C_param = 0.1
 Reg_param = 1.0
-n_epochs = 100
+n_epochs = 500
 batch_size = 32
 lr = 0.1
 delta = 1.0
@@ -32,6 +32,8 @@ def load_data():
     
     index = [i for i in range(len(X))]
     np.random.shuffle(index)
+    X = X[index]
+    Y = Y[index]
     
     train_X = X[0:100]
     train_Y = Y[0:100].reshape(-1,1)
@@ -118,5 +120,6 @@ def SVM():
 
 
 ###################################--main_code--###############################
+train_X, train_Y ,test_X, test_Y = load_data()
 pred = SVM()
 
