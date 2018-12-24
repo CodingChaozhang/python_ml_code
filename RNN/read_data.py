@@ -16,49 +16,74 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import mean_squared_error
 from keras.optimizers import Adam
 from keras.optimizers import RMSprop
+#
 
+#fish_data = 'data/fish_data.csv'
+#fish_data = pd.read_csv(fish_data, index_col=0)
+#dataset = fish_data.values
+#
+#dataset = dataset[0:200]
+#dataset = dataset[:, 0:49]
+#
+#dataset_X = dataset[:, 0:-1]
+##dataset_X = dataset_X / dataset_X.max()
+##dataset_X = np.abs(dataset_X)
+#
+#dataset_Y = dataset[:, -1].reshape(-1, 1)
+#s = dataset_Y.max()
+#dataset_Y = dataset_Y / s
+#
+#scaler1 = StandardScaler()
+#scaler2 = StandardScaler()
+#scaler3 = StandardScaler()
+#
+#scaler4 = MinMaxScaler()
+#
+##dataset_X = scaler4.fit_transform(dataset_X)
+#
+#Ux = dataset[:, 0:-1:3]
+#Uy = dataset[:, 1:-1:3]
+#W = dataset[:, 2:-1:3]
+#
+#Ux = scaler1.fit_transform(Ux)
+#Uy = scaler2.fit_transform(Uy)
+#W = scaler3.fit_transform(W)
+#
+#temp = np.column_stack((Ux, Uy))
+#dataset_X = np.column_stack((temp, W))
+#
+#
+#dataset1 = np.column_stack((dataset_X, dataset_Y))
 
-fish_data = 'data/fish_data.csv'
-fish_data = pd.read_csv(fish_data, index_col=0)
+fish_data = 'H:/job_2/py_code/filament_para25.csv'
+fish_data = pd.read_csv(fish_data, index_col=0)      # 探测器在细丝上方的数据
 dataset = fish_data.values
 
-dataset = dataset[0:200]
-dataset = dataset[:, 0:49]
-
-dataset_X = dataset[:, 0:-1]
-#dataset_X = dataset_X / dataset_X.max()
-#dataset_X = np.abs(dataset_X)
-
-dataset_Y = dataset[:, -1].reshape(-1, 1)
+dataset_X = dataset[:, 0:-3]
+dataset_Y = dataset[:, -3].reshape(-1, 1)
 s = dataset_Y.max()
 dataset_Y = dataset_Y / s
+
+Ux = dataset_X[:, 0:-1:3]
+Uy = dataset_X[:, 1:-1:3]
+W  = dataset[:, 2:-1:3]
 
 scaler1 = StandardScaler()
 scaler2 = StandardScaler()
 scaler3 = StandardScaler()
-
-scaler4 = MinMaxScaler()
-
-#dataset_X = scaler4.fit_transform(dataset_X)
-
-Ux = dataset[:, 0:-1:3]
-Uy = dataset[:, 1:-1:3]
-W = dataset[:, 2:-1:3]
 
 Ux = scaler1.fit_transform(Ux)
 Uy = scaler2.fit_transform(Uy)
 W = scaler3.fit_transform(W)
 
 temp = np.column_stack((Ux, Uy))
-dataset_X = np.column_stack((temp, W))
-
-
+#dataset_X = np.column_stack((temp, W))   
+dataset_X = temp
 dataset1 = np.column_stack((dataset_X, dataset_Y))
 
 
-
-train_X, train_Y = dataset_utils.generator_muti(dataset1, lookback=4, delay=0, min_index=0, max_index=150, step=1, batch_size=100)
-test_X, test_Y = dataset_utils.generator_muti(dataset1, lookback=4, delay=0, min_index=150, max_index=None, step=1, batch_size=100)
+train_X, train_Y = dataset_utils.generator_muti(dataset1, lookback=6, delay=0, min_index=0, max_index=150, step=1, batch_size=100)
+test_X, test_Y = dataset_utils.generator_muti(dataset1, lookback=6, delay=0, min_index=150, max_index=None, step=1, batch_size=100)
 
 
 
@@ -75,11 +100,11 @@ def RNN_Model(input_shape):
 #    X = keras.layers.Conv1D(filters=32, kernel_size=3, activation='relu')(Input)
 #    X = keras.layers.MaxPool1D(pool_size=2)(X)
 #    
-#    X = keras.layers.Conv1D(filters=64, kernel_size=1, activation='relu')(X)  
-#    X = keras.layers.Conv1D(filters=16, kernel_size=1, activation='relu')(X)
-#    X = keras.layers.Conv1D(filters=8, kernel_size=1, activation='relu')(X)
-#    X = keras.layers.Conv1D(filters=4, kernel_size=1, activation='relu')(X)
-#    X = keras.layers.LSTM(units=128, return_sequences=True)(X)
+    X = keras.layers.Conv1D(filters=64, kernel_size=1, activation='relu')(X)  
+    X = keras.layers.Conv1D(filters=16, kernel_size=1, activation='relu')(X)
+    X = keras.layers.Conv1D(filters=8, kernel_size=1, activation='relu')(X)
+    X = keras.layers.Conv1D(filters=4, kernel_size=1, activation='relu')(X)
+    X = keras.layers.LSTM(units=128, return_sequences=True)(X)
 #    X = keras.layers.LSTM(units=128, return_sequences=True)(X)
     X = keras.layers.LSTM(units=256)(X)
 #    X = keras.layers.Dense(units=128, activation='relu')(X)
@@ -172,8 +197,8 @@ def Prediction(model, test_X, test_Y):
 #    y_true = scaler_Y.inverse_transform(test_Y)
 #    y_pred = scaler_Y.inverse_transform(pred_Y)
     
-    y_true = test_Y * s
-    y_pred = pred_Y * s
+    y_true = test_Y 
+    y_pred = pred_Y 
     plt.plot(y_true)
     plt.plot(y_pred)
     plt.legend(['y_true', 'y_pred'])
@@ -188,13 +213,13 @@ def Prediction(model, test_X, test_Y):
 
 ##############################---Main_Code---#################################
     
-train_X = train_X.reshape(-1, 192)
-test_X = test_X.reshape(-1, 192)
+#train_X = train_X.reshape(-1, 192)
+#test_X = test_X.reshape(-1, 192)
 
 input_shape = train_X.shape[1:]    
 
 # step1 建立模型
-model = ANN_model(input_shape)
+model = RNN_Model(input_shape)
 model.summary()
 #
 # step2 进行训练
