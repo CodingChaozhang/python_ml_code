@@ -8,8 +8,6 @@ Created on Mon Dec 17 19:47:08 2018
 """
 import pandas as pd
 import numpy as np
-
-
 from keras.layers import Input,LSTM,Dense
 from keras.models import Model,load_model
 from keras.utils import plot_model
