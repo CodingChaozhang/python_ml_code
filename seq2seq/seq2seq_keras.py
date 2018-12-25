@@ -18,7 +18,7 @@ from keras.utils import plot_model
 N_UNITS = 256
 BATCH_SIZE = 64
 EPOCH = 200
-NUM_SAMPLES = 5000
+NUM_SAMPLES = 6000
 
  #读取cmn-eng.txt文件
 data_path = 'data/cmn.txt'
