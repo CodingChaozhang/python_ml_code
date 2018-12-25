@@ -18,7 +18,7 @@ from keras.utils import plot_model
 N_UNITS = 256
 BATCH_SIZE = 64
 EPOCH = 200
-NUM_SAMPLES = 8000
+NUM_SAMPLES = 5000
 
  #读取cmn-eng.txt文件
 data_path = 'data/cmn.txt'
@@ -107,46 +107,46 @@ def create_model(n_input,n_output,n_units):
     return model, encoder_infer, decoder_infer
 
 ########################################创建模型#################################
-    
-model_train, encoder_infer, decoder_infer = create_model(INPUT_FEATURE_LENGTH, OUTPUT_FEATURE_LENGTH, N_UNITS)    
-
-model_train.summary()
-encoder_infer.summary()
-decoder_infer.summary()
-
-
-model_train.compile(optimizer='rmsprop', loss='categorical_crossentropy')
-model_train.fit([encoder_input,decoder_input],decoder_output,batch_size=BATCH_SIZE,epochs=EPOCH,validation_split=0.2)
-model_train.save('seq2seq.h5')
-
-###############################预测序列#########################################
-def predict_chinese(source,encoder_inference, decoder_inference, n_steps, features):
-    #先通过推理encoder获得预测输入序列的隐状态
-    state = encoder_inference.predict(source)
-    #第一个字符'\t',为起始标志
-    predict_seq = np.zeros((1,1,features))
-    predict_seq[0,0,target_dict['\t']] = 1
-
-    output = ''
-    #开始对encoder获得的隐状态进行推理
-    #每次循环用上次预测的字符作为输入来预测下一次的字符，直到预测出了终止符
-    for i in range(n_steps):#n_steps为句子最大长度
-        #给decoder输入上一个时刻的h,c隐状态，以及上一次的预测字符predict_seq
-        yhat,h,c = decoder_inference.predict([predict_seq]+state)
-        #注意，这里的yhat为Dense之后输出的结果，因此与h不同
-        char_index = np.argmax(yhat[0,-1,:])
-        char = target_dict_reverse[char_index]
-        output += char
-        state = [h,c]#本次状态做为下一次的初始状态继续传递
-        predict_seq = np.zeros((1,1,features))
-        predict_seq[0,0,char_index] = 1
-        if char == '\n':#预测到了终止符则停下来
-            break
-    return output
-
-for i in range(1000,1100):
-    test = encoder_input[i:i+1,:,:]#i:i+1保持数组是三维
-    out = predict_chinese(test,encoder_infer,decoder_infer,OUTPUT_LENGTH,OUTPUT_FEATURE_LENGTH)
-    #print(input_texts[i],'\n---\n',target_texts[i],'\n---\n',out)
-    print(input_texts[i])
-    print(out)
+#    
+#model_train, encoder_infer, decoder_infer = create_model(INPUT_FEATURE_LENGTH, OUTPUT_FEATURE_LENGTH, N_UNITS)    
+#
+#model_train.summary()
+#encoder_infer.summary()
+#decoder_infer.summary()
+#
+#
+#model_train.compile(optimizer='rmsprop', loss='categorical_crossentropy')
+#model_train.fit([encoder_input,decoder_input],decoder_output,batch_size=BATCH_SIZE,epochs=EPOCH,validation_split=0.2)
+#model_train.save('seq2seq.h5')
+#
+################################预测序列#########################################
+#def predict_chinese(source,encoder_inference, decoder_inference, n_steps, features):
+#    #先通过推理encoder获得预测输入序列的隐状态
+#    state = encoder_inference.predict(source)
+#    #第一个字符'\t',为起始标志
+#    predict_seq = np.zeros((1,1,features))
+#    predict_seq[0,0,target_dict['\t']] = 1
+#
+#    output = ''
+#    #开始对encoder获得的隐状态进行推理
+#    #每次循环用上次预测的字符作为输入来预测下一次的字符，直到预测出了终止符
+#    for i in range(n_steps):#n_steps为句子最大长度
+#        #给decoder输入上一个时刻的h,c隐状态，以及上一次的预测字符predict_seq
+#        yhat,h,c = decoder_inference.predict([predict_seq]+state)
+#        #注意，这里的yhat为Dense之后输出的结果，因此与h不同
+#        char_index = np.argmax(yhat[0,-1,:])
+#        char = target_dict_reverse[char_index]
+#        output += char
+#        state = [h,c]#本次状态做为下一次的初始状态继续传递
+#        predict_seq = np.zeros((1,1,features))
+#        predict_seq[0,0,char_index] = 1
+#        if char == '\n':#预测到了终止符则停下来
+#            break
+#    return output
+#
+#for i in range(1000,1100):
+#    test = encoder_input[i:i+1,:,:]#i:i+1保持数组是三维
+#    out = predict_chinese(test,encoder_infer,decoder_infer,OUTPUT_LENGTH,OUTPUT_FEATURE_LENGTH)
+#    #print(input_texts[i],'\n---\n',target_texts[i],'\n---\n',out)
+#    print(input_texts[i])
+#    print(out)

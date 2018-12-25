@@ -4,7 +4,7 @@ Created on Mon Dec 10 15:04:06 2018
 
 @author: dell
 """
-
+import os
 import dataset_utils
 import pandas as pd
 import numpy as np
@@ -16,75 +16,96 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import mean_squared_error
 from keras.optimizers import Adam
 from keras.optimizers import RMSprop
-#
 
-#fish_data = 'data/fish_data.csv'
-#fish_data = pd.read_csv(fish_data, index_col=0)
-#dataset = fish_data.values
-#
-#dataset = dataset[0:200]
-#dataset = dataset[:, 0:49]
-#
-#dataset_X = dataset[:, 0:-1]
-##dataset_X = dataset_X / dataset_X.max()
-##dataset_X = np.abs(dataset_X)
-#
-#dataset_Y = dataset[:, -1].reshape(-1, 1)
-#s = dataset_Y.max()
-#dataset_Y = dataset_Y / s
-#
-#scaler1 = StandardScaler()
-#scaler2 = StandardScaler()
-#scaler3 = StandardScaler()
-#
-#scaler4 = MinMaxScaler()
-#
-##dataset_X = scaler4.fit_transform(dataset_X)
-#
-#Ux = dataset[:, 0:-1:3]
-#Uy = dataset[:, 1:-1:3]
-#W = dataset[:, 2:-1:3]
-#
-#Ux = scaler1.fit_transform(Ux)
-#Uy = scaler2.fit_transform(Uy)
-#W = scaler3.fit_transform(W)
-#
-#temp = np.column_stack((Ux, Uy))
-#dataset_X = np.column_stack((temp, W))
-#
-#
-#dataset1 = np.column_stack((dataset_X, dataset_Y))
+from keras.optimizers import Adagrad
 
-fish_data = 'H:/job_2/py_code/filament_para25.csv'
-fish_data = pd.read_csv(fish_data, index_col=0)      # 探测器在细丝上方的数据
-dataset = fish_data.values
+root = 'H:/job_2/'
+path1 = 'H:/job_2/vortex/temp25_1/'
+path2 = 'H:/job_2/vortex/temp25_2/'
+path3 = 'H:/job_2/vortex/temp25_3/'
+path4 = 'H:/job_2/vortex/temp25_4/'
+path5 = 'H:/job_2/vortex/temp25_5/'
+path_test = 'H:/job_2/vortex/temp25_test/'
 
-dataset_X = dataset[:, 0:-3]
-dataset_Y = dataset[:, -3].reshape(-1, 1)
-s = dataset_Y.max()
-dataset_Y = dataset_Y / s
+r = 0.1     # 细丝刚度                             
+y = 0.0     # 竖直距离
+v = 0.7     # 巡航速度
+xt = 10      #读数据圆心的位置
 
-Ux = dataset_X[:, 0:-1:3]
-Uy = dataset_X[:, 1:-1:3]
-W  = dataset[:, 2:-1:3]
+def Distance(root, r, xt):
+    '''
+    计算不同刚度的细丝在不同时刻距离探测器的水平位置
+    Parameters:
+        root -- 文件根目录
+        r -- 细丝刚度
+    Returns:
+        S -- 细丝距离探测器的水平位置
+    '''
+    path = root + 'data/r=' + str(r) + '/lag/'
+    filenames=os.listdir(path)  #返回指定目录下的所有文件和目录名
+    numbs = len(filenames)
+    
+    S = []      # 细丝头部距离探测器圆心的位置
+    for i in range(numbs):
+        with open(path + filenames[i]) as file:
+            x = file.readline().strip().split()
+            S.append(xt-float(x[0]))         # 这里9指探测器圆心水平位置
+    
+    return S
 
-scaler1 = StandardScaler()
-scaler2 = StandardScaler()
-scaler3 = StandardScaler()
-
-Ux = scaler1.fit_transform(Ux)
-Uy = scaler2.fit_transform(Uy)
-W = scaler3.fit_transform(W)
-
-temp = np.column_stack((Ux, Uy))
-#dataset_X = np.column_stack((temp, W))   
-dataset_X = temp
-dataset1 = np.column_stack((dataset_X, dataset_Y))
-
-
-train_X, train_Y = dataset_utils.generator_muti(dataset1, lookback=6, delay=0, min_index=0, max_index=150, step=1, batch_size=100)
-test_X, test_Y = dataset_utils.generator_muti(dataset1, lookback=6, delay=0, min_index=150, max_index=None, step=1, batch_size=100)
-
+def Input_X(root, path, y, v, r):
+    '''
+    读取训练数据并做预处理
+    Parameters:
+        path -- 训练数据所在文件路径
+        y -- 探测器相对鱼的Y距离
+        v -- 游动细丝的巡航速度    
+        r -- 游动细丝的刚度
+    Returns:
+        train_X -- Array, 每行数据为16个探测点的（Ux, Uy, W), shape=(m, 48)
+        train_Y -- Array, 训练标签， 每行为(S, V, R), shape=(m, 3)
+        test_X -- 同train_X
+        test_Y -- 同trian_Y
+    '''
+    t = 25
+    filenames=os.listdir(path)  #返回指定目录下的所有文件和目录名
+    
+    scaler1 = StandardScaler()
+    scaler2 = StandardScaler()
+    scaler3 = StandardScaler()
+    
+#    Ux = scaler1.fit_transform(Ux)
+#    Uy = scaler2.fit_transform(Uy)
+#    W = scaler3.fit_transform(W)
+        
+    X = []
+    numbs = len(filenames)
+    for i in range(0, numbs):
+        path1 = path + filenames[i] 
+        df = pd.read_table(path1, header=None, skiprows=[0,1,2,3,4,5,6], sep='\s+')
+        df.columns = ['X', 'Y', 'Ux', 'Uy', 'W']
+        data = df.drop(['X','Y'], axis=1)
+        temp = data.values
+        Ux = scaler1.fit_transform(temp[:,0].reshape(-1,1))
+        Uy = scaler2.fit_transform(temp[:,1].reshape(-1,1))
+        W = scaler3.fit_transform(temp[:,2].reshape(-1,1))
+        temp[:,0] = Ux.reshape(-1)
+        temp[:,1] = Uy.reshape(-1)
+        temp[:,2] = W.reshape(-1)
+        
+        temp = temp.reshape(t, t, 3)
+        X.append(temp)
+    X = np.array(X)
+    Ux = scaler1.fit_transform(X[:,:,:,0].reshape(-1,1))
+    Uy = scaler2.fit_transform(X[:,:,:,1].reshape(-1,1))
+    W = scaler3.fit_transform(X[:,:,:,2].reshape(-1,1))
+    X[:,:,:,0] = Ux.reshape(200,t,t)
+    X[:,:,:,1] = Uy.reshape(200,t,t)
+    X[:,:,:,2] = W.reshape(200,t,t)
+    S = Distance(root, r, xt)                # 探测器相对鱼的X距离
+    S = np.array(S)
+                    
+    return X, S
 
 
 def RNN_Model(input_shape):
@@ -96,22 +117,21 @@ def RNN_Model(input_shape):
         model -- 用于预测的模型
     '''
     Input = keras.layers.Input(shape=input_shape)
+#    X = keras.layers.LSTM(units=128, dropout=0.2, recurrent_dropout=0.2, return_sequences=True)(Input)
     X = keras.layers.LSTM(units=128, return_sequences=True)(Input)
-#    X = keras.layers.Conv1D(filters=32, kernel_size=3, activation='relu')(Input)
-#    X = keras.layers.MaxPool1D(pool_size=2)(X)
-#    
-    X = keras.layers.Conv1D(filters=64, kernel_size=1, activation='relu')(X)  
-    X = keras.layers.Conv1D(filters=16, kernel_size=1, activation='relu')(X)
-    X = keras.layers.Conv1D(filters=8, kernel_size=1, activation='relu')(X)
-    X = keras.layers.Conv1D(filters=4, kernel_size=1, activation='relu')(X)
+
     X = keras.layers.LSTM(units=128, return_sequences=True)(X)
 #    X = keras.layers.LSTM(units=128, return_sequences=True)(X)
+#    X = keras.layers.LSTM(units=128, return_sequences=True)(X)
+#    X = keras.layers.LSTM(units=256, return_sequences=True)(X)
+#    X = keras.layers.LSTM(units=256, return_sequences=True)(X)
     X = keras.layers.LSTM(units=256)(X)
-#    X = keras.layers.Dense(units=128, activation='relu')(X)
-#    X = keras.layers.Dense(units=128, activation='relu')(X)
-#    X = keras.layers.Dense(units=128, activation='relu')(X)
 #    X = keras.layers.Bidirectional(keras.layers.LSTM(units=128))(X)
-    Output = keras.layers.Dense(units=1, activation='relu')(X)
+#    X = keras.layers.Dense(units=128, activation='relu')(X)
+#    X = keras.layers.Dense(units=128, activation='relu')(X)
+#    X = keras.layers.Dropout(rate=0.2)(X)
+#    X = keras.layers.Dense(units=128, activation='relu')(X)
+    Output = keras.layers.Dense(units=1)(X)
     
     model = keras.models.Model(inputs=Input, outputs=Output)
     
@@ -169,7 +189,7 @@ def Train_Model(model, train_X, train_Y, test_X, test_Y):
     '''
     
     model.compile(optimizer=RMSprop(lr=0.001), loss='mae')
-    history = model.fit(train_X, train_Y, epochs=500, batch_size=50, validation_data=(test_X, test_Y),
+    history = model.fit(train_X, train_Y, epochs=200, batch_size=40, validation_data=(test_X, test_Y),
               verbose=2, shuffle=False)
     
     # plot history
@@ -212,9 +232,52 @@ def Prediction(model, test_X, test_Y):
 
 
 ##############################---Main_Code---#################################
-    
-#train_X = train_X.reshape(-1, 192)
-#test_X = test_X.reshape(-1, 192)
+dataset_X, dataset_Y = Input_X(root, path1, y, v, r)  
+dataset_X = dataset_X.reshape(200,-1) 
+dataset1 = np.column_stack((dataset_X, dataset_Y))
+
+dataset_X, dataset_Y = Input_X(root, path2, y, v, r)  
+dataset_X = dataset_X.reshape(200,-1) 
+dataset_Y = dataset_Y + 0.2
+dataset2 = np.column_stack((dataset_X, dataset_Y))
+
+dataset_X, dataset_Y = Input_X(root, path3, y, v, r)  
+dataset_X = dataset_X.reshape(200,-1) 
+dataset_Y = dataset_Y + 0.4
+dataset3 = np.column_stack((dataset_X, dataset_Y))
+
+dataset_X, dataset_Y = Input_X(root, path4, y, v, r)  
+dataset_X = dataset_X.reshape(200,-1) 
+dataset_Y = dataset_Y + 0.6
+dataset4 = np.column_stack((dataset_X, dataset_Y))
+
+dataset_X, dataset_Y = Input_X(root, path5, y, v, r)  
+dataset_X = dataset_X.reshape(200,-1) 
+dataset_Y = dataset_Y + 0.8
+dataset5 = np.column_stack((dataset_X, dataset_Y))
+
+
+
+train_X1, train_Y1 = dataset_utils.generator_muti(dataset1, lookback=4, delay=0, min_index=0, max_index=None, step=1, batch_size=200)
+train_X2, train_Y2 = dataset_utils.generator_muti(dataset2, lookback=4, delay=0, min_index=0, max_index=None, step=1, batch_size=200)
+train_X3, train_Y3 = dataset_utils.generator_muti(dataset3, lookback=4, delay=0, min_index=0, max_index=None, step=1, batch_size=200)
+train_X4, train_Y4 = dataset_utils.generator_muti(dataset4, lookback=4, delay=0, min_index=0, max_index=None, step=1, batch_size=200)
+train_X5, train_Y5 = dataset_utils.generator_muti(dataset5, lookback=4, delay=0, min_index=0, max_index=None, step=1, batch_size=200)
+
+train_X = np.row_stack((train_X1, train_X2))
+train_X = np.row_stack((train_X, train_X3))
+train_X = np.row_stack((train_X, train_X4))
+train_X = np.row_stack((train_X, train_X5))
+
+train_Y = np.row_stack((train_Y1, train_Y2))
+train_Y = np.row_stack((train_Y, train_Y3))
+train_Y = np.row_stack((train_Y, train_Y4))
+train_Y = np.row_stack((train_Y, train_Y5))
+
+
+test_X, test_Y = dataset_utils.generator_muti(dataset2, lookback=4, delay=0, min_index=0, max_index=None, step=1, batch_size=200)
+
+
 
 input_shape = train_X.shape[1:]    
 
