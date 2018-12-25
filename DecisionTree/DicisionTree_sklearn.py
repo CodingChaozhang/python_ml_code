@@ -14,6 +14,8 @@ from sklearn.datasets import load_iris
 from sklearn.model_selection import train_test_split
 
 from sklearn.tree import DecisionTreeClassifier
+from sklearn.tree import export_graphviz
+import graphviz
 
 
 def create_data():
@@ -35,7 +37,15 @@ X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.3, random_
 #clf = DecisionTreeClassifier(criterion='gini')  # CART Tree
 clf = DecisionTreeClassifier(criterion='entropy') # ID3
 clf.fit(X, Y)
+
 # step3 test Results:
 score = clf.score(X_test, Y_test)
+Y_pred = clf.predict(X_test)
 print('test accuracy :%.2f%%' % (score*100))
 
+# step4 export Tree structure:
+tree = export_graphviz(clf, out_file='mytree.pdf')
+with open('mytree.pdf') as f:
+    dot_graph = f.read()
+    
+graphviz.Source(dot_graph)
