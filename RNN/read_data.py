@@ -119,19 +119,19 @@ def RNN_Model(input_shape):
     '''
     Input = keras.layers.Input(shape=input_shape)
 #    X = keras.layers.LSTM(units=128, dropout=0.2, recurrent_dropout=0.2, return_sequences=True)(Input)
-    X = keras.layers.LSTM(units=256, return_sequences=True)(Input)
+    X = keras.layers.LSTM(units=512, return_sequences=True)(Input)
 
 #    X = keras.layers.LSTM(units=128, return_sequences=True)(X)
 #    X = keras.layers.LSTM(units=128, return_sequences=True)(X)
 #    X = keras.layers.LSTM(units=128, return_sequences=True)(X)
-#    X = keras.layers.LSTM(units=256, return_sequences=True)(X)
-#    X = keras.layers.LSTM(units=256, return_sequences=True)(X)
-    X = keras.layers.LSTM(units=256)(X)
+#    X = keras.layers.LSTM(units=512, return_sequences=True)(X)
+#    X = keras.layers.LSTM(units=512, return_sequences=True)(X)
+    X = keras.layers.LSTM(units=512)(X)
 #    X = keras.layers.Bidirectional(keras.layers.LSTM(units=128))(X)
 #    X = keras.layers.Dense(units=128, activation='relu')(X)
 #    X = keras.layers.Dense(units=128, activation='relu')(X)
 #    X = keras.layers.Dropout(rate=0.2)(X)
-#    X = keras.layers.Dense(units=128, activation='relu')(X)
+    X = keras.layers.Dense(units=512, activation='relu')(X)
     Output = keras.layers.Dense(units=1)(X)
     
     model = keras.models.Model(inputs=Input, outputs=Output)
@@ -158,6 +158,7 @@ def RNN_Model2(input_shape):
     
     
     X = keras.layers.LSTM(units=512, return_sequences=True)(X)  
+    X = keras.layers.LSTM(units=512, return_sequences=True)(X) 
 
     X = keras.layers.LSTM(units=512)(X)  
     X = keras.layers.Dense(units=512, activation='relu')(X)  
@@ -221,7 +222,7 @@ def Train_Model(model, train_X, train_Y, test_X, test_Y):
     '''
     
     model.compile(optimizer=RMSprop(lr=0.001), loss='mae')
-    history = model.fit(train_X, train_Y, epochs=200, batch_size=40, validation_data=(test_X, test_Y),
+    history = model.fit(train_X, train_Y, epochs=20, batch_size=100, validation_data=(test_X, test_Y),
               verbose=2, shuffle=False)
     
     # plot history
