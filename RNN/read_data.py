@@ -11,6 +11,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 import keras
+from keras import regularizers
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import mean_squared_error
@@ -30,7 +31,7 @@ path_test = 'H:/job_2/vortex/temp25_test/'
 r = 0.1     # 细丝刚度                             
 y = 0.0     # 竖直距离
 v = 0.7     # 巡航速度
-xt = 10      #读数据圆心的位置
+xt = 9      #读数据圆心的位置
 
 def Distance(root, r, xt):
     '''
@@ -118,9 +119,9 @@ def RNN_Model(input_shape):
     '''
     Input = keras.layers.Input(shape=input_shape)
 #    X = keras.layers.LSTM(units=128, dropout=0.2, recurrent_dropout=0.2, return_sequences=True)(Input)
-    X = keras.layers.LSTM(units=128, return_sequences=True)(Input)
+    X = keras.layers.LSTM(units=256, return_sequences=True)(Input)
 
-    X = keras.layers.LSTM(units=128, return_sequences=True)(X)
+#    X = keras.layers.LSTM(units=128, return_sequences=True)(X)
 #    X = keras.layers.LSTM(units=128, return_sequences=True)(X)
 #    X = keras.layers.LSTM(units=128, return_sequences=True)(X)
 #    X = keras.layers.LSTM(units=256, return_sequences=True)(X)
@@ -136,6 +137,37 @@ def RNN_Model(input_shape):
     model = keras.models.Model(inputs=Input, outputs=Output)
     
     return model
+
+def RNN_Model2(input_shape):
+    '''
+    2D流场时间序列预测网络结构
+    Parameters:
+        input_shape -- 输入数据类型
+    Returns:
+        model -- 用于预测的模型
+    '''
+    Input = keras.layers.Input(shape=input_shape)
+    
+    
+    X = keras.layers.LSTM(units=512, return_sequences=True)(Input)
+    
+#    X = keras.layers.LSTM(units=256, dropout=0.2, recurrent_dropout=0.2, 
+#                          kernel_regularizer=regularizers.l2(0.01), return_sequences=True)(X)
+#    X = keras.layers.LSTM(units=256, dropout=0.2, recurrent_dropout=0.2, 
+#                          kernel_regularizer=regularizers.l2(0.01), return_sequences=True)(X)
+    
+    
+    X = keras.layers.LSTM(units=512, return_sequences=True)(X)  
+
+    X = keras.layers.LSTM(units=512)(X)  
+    X = keras.layers.Dense(units=512, activation='relu')(X)  
+    Output = keras.layers.Dense(units=1)(X)
+    
+    model = keras.models.Model(inputs=Input, outputs=Output)
+    
+    return model
+
+
 
 def ANN_model(input_shape):
     Input = keras.layers.Input(shape=input_shape)
@@ -256,13 +288,17 @@ dataset_X = dataset_X.reshape(200,-1)
 dataset_Y = dataset_Y + 0.8
 dataset5 = np.column_stack((dataset_X, dataset_Y))
 
+dataset_X, dataset_Y = Input_X(root, path_test, y, v, r)  
+dataset_X = dataset_X.reshape(200,-1) 
+dataset_Y = dataset_Y + 0.5
+dataset6 = np.column_stack((dataset_X, dataset_Y))
 
 
-train_X1, train_Y1 = dataset_utils.generator_muti(dataset1, lookback=4, delay=0, min_index=0, max_index=None, step=1, batch_size=200)
-train_X2, train_Y2 = dataset_utils.generator_muti(dataset2, lookback=4, delay=0, min_index=0, max_index=None, step=1, batch_size=200)
-train_X3, train_Y3 = dataset_utils.generator_muti(dataset3, lookback=4, delay=0, min_index=0, max_index=None, step=1, batch_size=200)
-train_X4, train_Y4 = dataset_utils.generator_muti(dataset4, lookback=4, delay=0, min_index=0, max_index=None, step=1, batch_size=200)
-train_X5, train_Y5 = dataset_utils.generator_muti(dataset5, lookback=4, delay=0, min_index=0, max_index=None, step=1, batch_size=200)
+train_X1, train_Y1 = dataset_utils.generator_muti(dataset1, lookback=6, delay=0, min_index=0, max_index=None, step=1, batch_size=200)
+train_X2, train_Y2 = dataset_utils.generator_muti(dataset2, lookback=6, delay=0, min_index=0, max_index=None, step=1, batch_size=200)
+train_X3, train_Y3 = dataset_utils.generator_muti(dataset3, lookback=6, delay=0, min_index=0, max_index=None, step=1, batch_size=200)
+train_X4, train_Y4 = dataset_utils.generator_muti(dataset4, lookback=6, delay=0, min_index=0, max_index=None, step=1, batch_size=200)
+train_X5, train_Y5 = dataset_utils.generator_muti(dataset5, lookback=6, delay=0, min_index=0, max_index=None, step=1, batch_size=200)
 
 train_X = np.row_stack((train_X1, train_X2))
 train_X = np.row_stack((train_X, train_X3))
@@ -275,14 +311,14 @@ train_Y = np.row_stack((train_Y, train_Y4))
 train_Y = np.row_stack((train_Y, train_Y5))
 
 
-test_X, test_Y = dataset_utils.generator_muti(dataset2, lookback=4, delay=0, min_index=0, max_index=None, step=1, batch_size=200)
+test_X, test_Y = dataset_utils.generator_muti(dataset6, lookback=6, delay=0, min_index=0, max_index=None, step=1, batch_size=200)
 
 
 
 input_shape = train_X.shape[1:]    
 
 # step1 建立模型
-model = RNN_Model(input_shape)
+model = RNN_Model2(input_shape)
 model.summary()
 #
 # step2 进行训练
