@@ -33,7 +33,7 @@ Y_test = test.iloc[:,-1].values
 
 ############################--main_code--######################################
 
-model = xgb.XGBRegressor(learning_rate=0.1, n_estimators=550, max_depth=4, 
+model = xgb.XGBRegressor(learning_rate=0.1, n_estimators=700, max_depth=10, 
                          min_child_weight=5, seed=0, subsample=0.7, colsample_bytree=0.7,
                          gamma=0.1, reg_alpha=1, reg_lambda=1)
 

@@ -98,19 +98,19 @@ path_test = 'H:/job_2/vortex/temp25_test2/'
 
 dataset_X, dataset_Y = Input_X(root, path_test, y, v, r)  
 dataset_X = dataset_X.reshape(200,-1) 
-dataset_Y = dataset_Y + 1.5
-dataset = np.column_stack((dataset_X, dataset_Y))
-
-temp = pd.read_csv(root2+'train.csv')
-temp = temp.iloc[:,1:1877]
-
-temp1 = pd.read_csv(root2+'test.csv')
-temp1 = temp1.iloc[:,1:1877]
-
-temp = np.row_stack((temp, temp1))
-temp = np.row_stack((temp, dataset))
-pd = pd.DataFrame(data=temp)
-
-pd.to_csv(root2 + 'train1.csv')
+dataset_Y = dataset_Y -3
+#dataset = np.column_stack((dataset_X, dataset_Y))
+#
+#temp = pd.read_csv(root2+'train.csv')
+#temp = temp.iloc[:,1:1877]
+#
+#temp1 = pd.read_csv(root2+'test.csv')
+#temp1 = temp1.iloc[:,1:1877]
+#
+#temp = np.row_stack((temp, temp1))
+#temp = np.row_stack((temp, dataset))
+#pd = pd.DataFrame(data=temp)
+#
+#pd.to_csv(root2 + 'train1.csv')
 
 
