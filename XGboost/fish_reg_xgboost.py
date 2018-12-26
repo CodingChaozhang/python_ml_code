@@ -21,7 +21,7 @@ import matplotlib.pyplot as plt
 root = 'data/'
 
 #############################--load_data--#####################################
-train = pd.read_csv(root+'train.csv')
+train = pd.read_csv(root+'train1.csv')
 test = pd.read_csv(root+'test.csv')
 
 X_train = train.iloc[:,1:-1].values
