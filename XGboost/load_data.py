@@ -94,16 +94,16 @@ def Input_X(root, path, y, v, r):
 ###############################################################################
 root = 'H:/job_2/'
 root2 = 'data/'
-path_test = 'H:/job_2/vortex/temp25_test1/'
+path_test = 'H:/job_2/vortex/temp25_test3/'
 
 dataset_X, dataset_Y = Input_X(root, path_test, y, v, r)  
 dataset_X = dataset_X.reshape(200,-1) 
-dataset_Y = dataset_Y - 2.5
+dataset_Y = dataset_Y - 2
 dataset = np.column_stack((dataset_X, dataset_Y))
 
 
 pd = pd.DataFrame(data=dataset)
 
-pd.to_csv(root2 + 'test2.csv')
+pd.to_csv(root2 + 'test3.csv')
 
 
