@@ -15,12 +15,13 @@ from sklearn import metrics
 from sklearn.model_selection import GridSearchCV
 
 import matplotlib.pyplot as plt
+import sklearn
 #from hyperopt import hp
 
 
 root = 'data/'
 
-#############################--load_data--#####################################
+#############################--load_data--###################################
 temp1 = np.zeros((1400, 1))
 temp2 = np.zeros((200, 1))
 
