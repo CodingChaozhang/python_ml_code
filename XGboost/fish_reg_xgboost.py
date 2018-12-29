@@ -15,7 +15,7 @@ from sklearn import metrics
 from sklearn.model_selection import GridSearchCV
 
 import matplotlib.pyplot as plt
-import sklearn
+import sklearn as sk
 #from hyperopt import hp
 
 
