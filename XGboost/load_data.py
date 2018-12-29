@@ -13,10 +13,10 @@ import numpy as np
 
 ##################################--parameters--###############################
 
-r = 0.1     # 细丝刚度                             
+r = 0.5     # 细丝刚度                             
 y = 0.0     # 竖直距离
 v = 0.7     # 巡航速度
-xt = 9      #读数据圆心的位置
+xt = 10      #读数据圆心的位置
 
 ###############################################################################
 def Distance(root, r, xt):
@@ -98,12 +98,12 @@ path_test = 'H:/job_2/vortex/temp25_test3/'
 
 dataset_X, dataset_Y = Input_X(root, path_test, y, v, r)  
 dataset_X = dataset_X.reshape(200,-1) 
-dataset_Y = dataset_Y - 2
+dataset_Y = dataset_Y
 dataset = np.column_stack((dataset_X, dataset_Y))
 
 
 pd = pd.DataFrame(data=dataset)
 
-pd.to_csv(root2 + 'test3.csv')
+pd.to_csv(root2 + 'test_0.5.csv')
 
 

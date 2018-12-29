@@ -149,7 +149,7 @@ def RNN_Model2(input_shape):
     Input = keras.layers.Input(shape=input_shape)
     
     
-    X = keras.layers.LSTM(units=512, return_sequences=True)(Input)
+    X = keras.layers.LSTM(units=256, return_sequences=True)(Input)
     
 #    X = keras.layers.LSTM(units=256, dropout=0.2, recurrent_dropout=0.2, 
 #                          kernel_regularizer=regularizers.l2(0.01), return_sequences=True)(X)
@@ -157,8 +157,8 @@ def RNN_Model2(input_shape):
 #                          kernel_regularizer=regularizers.l2(0.01), return_sequences=True)(X)
     
     
-    X = keras.layers.LSTM(units=512, return_sequences=True)(X)  
-    X = keras.layers.LSTM(units=512, return_sequences=True)(X) 
+    X = keras.layers.LSTM(units=256, return_sequences=True)(X)  
+#    X = keras.layers.LSTM(units=512, return_sequences=True)(X) 
     
     X = keras.layers.LSTM(units=512, return_sequences=True)(X) 
 
@@ -224,7 +224,7 @@ def Train_Model(model, train_X, train_Y, test_X, test_Y):
     '''
     
     model.compile(optimizer=RMSprop(lr=0.001), loss='mae')
-    history = model.fit(train_X, train_Y, epochs=50, batch_size=200, validation_data=(test_X, test_Y),
+    history = model.fit(train_X, train_Y, epochs=100, batch_size=20, validation_data=(test_X, test_Y),
               verbose=2, shuffle=False)
     
     # plot history
@@ -267,41 +267,31 @@ def Prediction(model, test_X, test_Y):
 
 
 ##############################---Main_Code---#################################
-dataset_X, dataset_Y = Input_X(root, path1, y, v, r)  
-dataset_X = dataset_X.reshape(200,-1) 
-dataset1 = np.column_stack((dataset_X, dataset_Y))
+root = 'H:/machine_learning/python_ml_code/XGboost/data/'
 
-dataset_X, dataset_Y = Input_X(root, path2, y, v, r)  
-dataset_X = dataset_X.reshape(200,-1) 
-dataset_Y = dataset_Y + 0.2
-dataset2 = np.column_stack((dataset_X, dataset_Y))
+train = pd.read_csv(root + 'train1.csv')
+train = train.iloc[:,1:].values
 
-dataset_X, dataset_Y = Input_X(root, path3, y, v, r)  
-dataset_X = dataset_X.reshape(200,-1) 
-dataset_Y = dataset_Y + 0.4
-dataset3 = np.column_stack((dataset_X, dataset_Y))
+test = pd.read_csv(root + 'test1.csv')
+test = test.iloc[:,1:].values
 
-dataset_X, dataset_Y = Input_X(root, path4, y, v, r)  
-dataset_X = dataset_X.reshape(200,-1) 
-dataset_Y = dataset_Y + 0.6
-dataset4 = np.column_stack((dataset_X, dataset_Y))
-
-dataset_X, dataset_Y = Input_X(root, path5, y, v, r)  
-dataset_X = dataset_X.reshape(200,-1) 
-dataset_Y = dataset_Y + 0.8
-dataset5 = np.column_stack((dataset_X, dataset_Y))
-
-dataset_X, dataset_Y = Input_X(root, path_test, y, v, r)  
-dataset_X = dataset_X.reshape(200,-1) 
-dataset_Y = dataset_Y + 0.5
-dataset6 = np.column_stack((dataset_X, dataset_Y))
+train_X = np.zeros((193, 6, 1875))
+train_Y = np.zeros((193, 1))
 
 
-train_X1, train_Y1 = dataset_utils.generator_muti(dataset1, lookback=6, delay=0, min_index=0, max_index=None, step=1, batch_size=200)
-train_X2, train_Y2 = dataset_utils.generator_muti(dataset2, lookback=6, delay=0, min_index=0, max_index=None, step=1, batch_size=200)
-train_X3, train_Y3 = dataset_utils.generator_muti(dataset3, lookback=6, delay=0, min_index=0, max_index=None, step=1, batch_size=200)
-train_X4, train_Y4 = dataset_utils.generator_muti(dataset4, lookback=6, delay=0, min_index=0, max_index=None, step=1, batch_size=200)
-train_X5, train_Y5 = dataset_utils.generator_muti(dataset5, lookback=6, delay=0, min_index=0, max_index=None, step=1, batch_size=200)
+
+dataset1 = train[0:200]
+dataset2 = train[200:400]
+dataset3 = train[400:600]
+dataset4 = train[600:800]
+dataset5 = train[800:1000]
+dataset6 = train[1000:1200]
+dataset7 = train[1200:1400]
+train_X1, train_Y1 = dataset_utils.generator_muti(dataset1, lookback=20, delay=0, min_index=0, max_index=120, step=1, batch_size=200)
+train_X2, train_Y2 = dataset_utils.generator_muti(dataset2, lookback=20, delay=0, min_index=0, max_index=120, step=1, batch_size=200)
+train_X3, train_Y3 = dataset_utils.generator_muti(dataset3, lookback=20, delay=0, min_index=0, max_index=120, step=1, batch_size=200)
+train_X4, train_Y4 = dataset_utils.generator_muti(dataset4, lookback=20, delay=0, min_index=0, max_index=120, step=1, batch_size=200)
+train_X5, train_Y5 = dataset_utils.generator_muti(dataset5, lookback=20, delay=0, min_index=0, max_index=120, step=1, batch_size=200)
 
 train_X = np.row_stack((train_X1, train_X2))
 train_X = np.row_stack((train_X, train_X3))
@@ -314,7 +304,7 @@ train_Y = np.row_stack((train_Y, train_Y4))
 train_Y = np.row_stack((train_Y, train_Y5))
 
 
-test_X, test_Y = dataset_utils.generator_muti(dataset6, lookback=6, delay=0, min_index=0, max_index=None, step=1, batch_size=200)
+test_X, test_Y = dataset_utils.generator_muti(test, lookback=20, delay=0, min_index=0, max_index=None, step=1, batch_size=200)
 
 
 
